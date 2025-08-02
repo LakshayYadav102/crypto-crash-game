@@ -1,0 +1,67 @@
+{
+  "info": {
+    "name": "Crypto Crash Game API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Place Bet",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"userId\":\"3\",\"crypto\":\"bitcoin\",\"usdBet\":10,\"crashMultiplier\":0}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": "http://localhost:5000/api/game/place-bet"
+      },
+      "response": []
+    },
+    {
+      "name": "Get Wallet Balance",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "http://localhost:5000/api/game/wallet/3"
+      },
+      "response": []
+    },
+    {
+      "name": "Get Player Wallet",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "http://localhost:5000/api/game/player/3"
+      },
+      "response": []
+    },
+    {
+      "name": "Reset Balance",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "http://localhost:5000/api/game/debug/reset-balance/3"
+      },
+      "response": []
+    },
+    {
+      "name": "Get All Games",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "http://localhost:5000/api/game/"
+      },
+      "response": []
+    },
+    {
+      "name": "Get Leaderboard",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "http://localhost:5000/api/game/leaderboard"
+      },
+      "response": []
+    }
+  ]
+}

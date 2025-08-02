@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Crypto Crash Game Client</title>
+  <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+  <style>
+    body { font-family: sans-serif; text-align: center; margin-top: 40px; }
+    .multiplier { font-size: 3em; color: green; margin: 20px 0; }
+    .crash { color: red; font-weight: bold; }
+    button { padding: 10px 20px; margin: 10px; font-size: 1em; }
+  </style>
+</head>
+<body>
+  <h1>Crypto Crash – WebSocket Client</h1>
+
+  <div class="multiplier" id="multiplier">Multiplier: 1.00x</div>
+  <div id="crash-info"></div>
+
+  <input type="text" id="username" placeholder="Enter username" />
+  <button onclick="sendBet()">Place $10 BTC Bet</button>
+  <button onclick="cashout()">Cashout</button>
+
+  <h3>Events:</h3>
+  <div id="events" style="max-height: 300px; overflow-y: scroll;"></div>
+
+  <script>
+    const socket = io("http://localhost:5000"); // Update when deploying
+
+    socket.on("connect", () => {
+      console.log("Connected to server");
+    });
+
+    socket.on("current_round", (data) => {
+      log(`Current round ID: ${data.roundId}`);
+    });
+
+    socket.on("multiplier_update", ({ multiplier }) => {
+      document.getElementById("multiplier").textContent = `Multiplier: ${multiplier}x`;
+    });
+
+    socket.on("round_crash", ({ crashPoint }) => {
+      document.getElementById("crash-info").innerHTML = `<p class="crash">💥 Crashed at ${crashPoint}x</p>`;
+      log(`Game crashed at ${crashPoint}x`);
+    });
+
+    socket.on("round_start", ({ roundId }) => {
+      document.getElementById("crash-info").innerHTML = "";
+      log(`New round started! ID: ${roundId}`);
+    });
+
+    socket.on("player_cashout", (data) => {
+      log(`💰 ${data.username} cashed out at ${data.multiplier}x (${data.payout} ${data.crypto})`);
+    });
+
+    function sendBet() {
+      const username = document.getElementById("username").value.trim();
+      if (!username) return alert("Enter username first");
+
+      fetch("http://localhost:5000/api/wallet/bet", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username,
+          usdAmount: 10,
+          cryptoType: "BTC"
+        })
+      })
+        .then(res => res.json())
+        .then(data => {
+          log(`✅ Bet placed: ${data.cryptoAmount} BTC`);
+        })
+        .catch(err => {
+          log("❌ Bet failed: " + err.message);
+        });
+    }
+
+    function cashout() {
+      const username = document.getElementById("username").value.trim();
+      if (!username) return alert("Enter username first");
+
+      socket.emit("cashout", { username });
+    }
+
+    function log(msg) {
+      const el = document.getElementById("events");
+      const p = document.createElement("p");
+      p.textContent = msg;
+      el.prepend(p);
+    }
+  </script>
+</body>
+</html>

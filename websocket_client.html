@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Crypto Crash WebSocket Client</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.0/socket.io.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    #output { margin-top: 20px; padding: 10px; border: 1px solid #ccc; }
+    button { margin: 5px; padding: 10px; }
+    input { padding: 5px; margin: 5px; }
+  </style>
+</head>
+<body>
+  <h1>Crypto Crash WebSocket Client</h1>
+  <div>
+    <input id="userId" type="text" placeholder="User ID (e.g., 3)" value="3">
+    <input id="betAmount" type="number" placeholder="Bet amount (USD)">
+    <button onclick="placeBet()">Place Bet</button>
+    <button onclick="cashOut()">Cash Out</button>
+  </div>
+  <div id="output"></div>
+
+  <script>
+    const socket = io('http://localhost:5000');
+    const output = document.getElementById('output');
+    
+    function log(message) {
+      output.innerHTML += `<p>${new Date().toLocaleTimeString()}: ${message}</p>`;
+    }
+
+    socket.on('connect', () => log('Connected to server'));
+    socket.on('current_round', data => log(`Current round: ${JSON.stringify(data)}`));
+    socket.on('betting_phase_start', data => log(`Betting phase started: ${data.roundId}`));
+    socket.on('betting_phase_end', data => log(`Betting phase ended: ${data.roundId}`));
+    socket.on('round_start', data => log(`Round started: ${data.roundId}`));
+    socket.on('multiplier_update', data => log(`Multiplier: ${data.multiplier.toFixed(2)}x`));
+    socket.on('round_crash', data => log(`Round crashed at ${data.crashPoint.toFixed(2)}x`));
+    socket.on('player_cashout', data => log(`Cashout: ${data.username} at ${data.multiplier}x, ${data.payout} ${data.crypto}`));
+    socket.on('bet_accepted', data => log(`Bet accepted: ${data.roundId}`));
+    socket.on('bet_error', message => log(`Bet error: ${message}`));
+    socket.on('cashout_error', message => log(`Cashout error: ${message}`));
+    socket.on('update_leaderboard', () => log('Leaderboard updated'));
+
+    async function placeBet() {
+      const userId = document.getElementById('userId').value;
+      const betAmount = parseFloat(document.getElementById('betAmount').value);
+      if (!betAmount || betAmount <= 0) {
+        log('Invalid bet amount');
+        return;
+      }
+      try {
+        const res = await fetch('http://localhost:5000/api/game/place-bet', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId, crypto: 'bitcoin', usdBet: betAmount, crashMultiplier: 0 })
+        });
+        const data = await res.json();
+        if (data.success) {
+          socket.emit('place_bet', {
+            username: userId,
+            playerId: userId,
+            usdAmount: betAmount,
+            cryptoAmount: data.game.cryptoAmount,
+            cryptoType: 'BTC'
+          });
+          log(`Bet placed: $${betAmount}`);
+        } else {
+          log(`Bet failed: ${data.error}`);
+        }
+      } catch (err) {
+        log(`Bet error: ${err.message}`);
+      }
+    }
+
+    function cashOut() {
+      const userId = document.getElementById('userId').value;
+      socket.emit('cashout', { username: userId, playerId: userId });
+      log('Cashout attempted');
+    }
+  </script>
+</body>
+</html>
