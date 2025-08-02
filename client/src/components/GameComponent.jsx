@@ -3,7 +3,9 @@ import io from 'socket.io-client';
 import axios from 'axios';
 import WalletBalance from './WalletBalance';
 
-const socket = io('http://localhost:5000');
+// Use environment variable or fallback to localhost for development
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
+const socket = io(API_BASE_URL, { transports: ['websocket'] });
 
 const GameComponent = ({ userId }) => {
   const [gameState, setGameState] = useState({});
@@ -156,7 +158,7 @@ const GameComponent = ({ userId }) => {
     }
 
     try {
-      const res = await axios.post("http://localhost:5000/api/game/place-bet", {
+      const res = await axios.post(`${API_BASE_URL}/api/game/place-bet`, {
         userId,
         crypto: "bitcoin",
         usdBet: parseFloat(betAmount),

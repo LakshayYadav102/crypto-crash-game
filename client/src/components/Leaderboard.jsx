@@ -2,7 +2,9 @@ import React, { useEffect, useState } from 'react';
 import io from 'socket.io-client';
 import axios from 'axios';
 
-const socket = io('http://localhost:5000');
+// Use environment variable or fallback to localhost for development
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
+const socket = io(API_BASE_URL, { transports: ['websocket'] });
 
 const Leaderboard = () => {
   const [leaders, setLeaders] = useState([]);
@@ -12,7 +14,7 @@ const Leaderboard = () => {
   const fetchLeaders = async () => {
     try {
       setLoading(true);
-      const res = await axios.get(`http://localhost:5000/api/game/leaderboard`);
+      const res = await axios.get(`${API_BASE_URL}/api/game/leaderboard`);
       console.log('Leaderboard response:', JSON.stringify(res.data, null, 2));
       setLeaders(res.data.leaderboard || []);
       setError(null);

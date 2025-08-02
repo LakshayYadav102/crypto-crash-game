@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 
+// Use environment variable or fallback to localhost for development
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
+
 const WalletBalance = ({ userId, refreshTrigger }) => {
   const [balanceUSD, setBalanceUSD] = useState(0);
   const [balanceBTC, setBalanceBTC] = useState(0);
@@ -17,7 +20,7 @@ const WalletBalance = ({ userId, refreshTrigger }) => {
     const fetchBalance = async () => {
       try {
         setLoading(true);
-        const response = await axios.get(`http://localhost:5000/api/game/wallet/${userId}`);
+        const response = await axios.get(`${API_BASE_URL}/api/game/wallet/${userId}`);
         console.log('Wallet response:', JSON.stringify(response.data, null, 2));
         const { btcBalance, usdBalance } = response.data;
         setBalanceBTC(btcBalance || 0);
