@@ -4,19 +4,38 @@ const mongoose = require("mongoose");
 const dotenv = require("dotenv");
 const http = require("http");
 const { Server } = require("socket.io");
+
 dotenv.config();
 
 const app = express();
-app.use(cors());
+
+// Configure CORS for specific origins
+const allowedOrigins = [
+  process.env.FRONTEND_URL || "https://crypto-crash-game12.netlify.app",
+  "http://localhost:3000"
+];
+
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  credentials: true
+}));
 app.use(express.json());
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
-})
-.then(() => console.log("MongoDB connected"))
-.catch((err) => console.error("MongoDB connection error:", err));
+}).then(() => {
+  console.log("MongoDB connected");
+}).catch((err) => {
+  console.error("MongoDB connection error:", err);
+});
 
 // Mount game API routes
 const gameRouter = require("./routes/gameRoutes");
@@ -26,9 +45,17 @@ app.use("/api/game", gameRouter);
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "*",
+    origin: allowedOrigins,
     methods: ["GET", "POST"],
-  },
+    credentials: true
+  }
+});
+
+io.on("connection", (socket) => {
+  console.log(`WebSocket client connected: ${socket.id} from ${socket.handshake.headers.origin}`);
+  socket.on("disconnect", () => {
+    console.log(`WebSocket client disconnected: ${socket.id}`);
+  });
 });
 
 // Initialize game loop
